@@ -1,0 +1,59 @@
+module gpio_ctrl (
+  input wire PCLK,
+  input wire PRESETn,
+  input wire [7:0] PADDR,
+  input wire PSEL,
+  input wire PENABLE,
+  input wire PWRITE,
+  input wire [31:0] PWDATA,
+  output reg [31:0] PRDATA,
+  output wire PREADY,
+  input wire [31:0] gpio_datain,
+  input wire [31:0] int_state_in,
+  output wire [31:0] gpio_dir,
+  output wire [31:0] gpio_dataout,
+  output wire [31:0] gpio_int_en
+);
+
+  reg [31:0] gpio_dir_reg;
+  reg [31:0] gpio_dataout_reg;
+  reg [31:0] gpio_int_en_reg;
+
+  assign gpio_dir = gpio_dir_reg;
+  assign gpio_dataout = gpio_dataout_reg;
+  assign gpio_int_en = gpio_int_en_reg;
+  assign PREADY = 1'b1;
+
+  localparam ADDR_DATAOUT  = 8'h00;
+  localparam ADDR_DIR      = 8'h04;
+  localparam ADDR_DATAIN   = 8'h08;
+  localparam ADDR_INT_EN   = 8'h0C;
+  localparam ADDR_INT_STAT = 8'h10;
+
+  always @(posedge PCLK or negedge PRESETn) begin
+    if (!PRESETn) begin
+      gpio_dir_reg <= 32'b0;
+      gpio_dataout_reg <= 32'b0;
+      gpio_int_en_reg <= 32'b0;
+    end
+    else if (PSEL && PENABLE && PWRITE) begin
+      case (PADDR)
+        ADDR_DATAOUT: gpio_dataout_reg <= PWDATA;
+        ADDR_DIR:     gpio_dir_reg <= PWDATA;
+        ADDR_INT_EN:  gpio_int_en_reg <= PWDATA;
+      endcase
+    end
+  end
+
+  always @(*) begin
+    case (PADDR)
+      ADDR_DATAOUT:  PRDATA = gpio_dataout_reg;
+      ADDR_DIR:      PRDATA = gpio_dir_reg;
+      ADDR_DATAIN:   PRDATA = gpio_datain;
+      ADDR_INT_EN:   PRDATA = gpio_int_en_reg;
+      ADDR_INT_STAT: PRDATA = int_state_in;
+      default:       PRDATA = 32'h00000000;
+    endcase
+  end
+
+endmodule

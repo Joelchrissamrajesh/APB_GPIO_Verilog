@@ -1,0 +1,25 @@
+module gpio_prt_interface (
+  input wire PCLK,
+  input wire PRESETn,
+  input wire [31:0] gpio_dir,
+  input wire [31:0] gpio_dataout,
+  inout wire [31:0] xpins,
+  output reg [31:0] gpio_datain
+);
+
+  genvar i;
+
+  generate
+    for (i = 0; i < 32; i = i + 1) begin : GPIO_PIN
+      assign xpins[i] = gpio_dir[i] ? gpio_dataout[i] : 1'bz;
+    end
+  endgenerate
+
+  always @(posedge PCLK or negedge PRESETn) begin
+    if (!PRESETn)
+      gpio_datain <= 32'b0;
+    else
+      gpio_datain <= xpins;
+  end
+
+endmodule

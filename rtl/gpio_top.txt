@@ -1,0 +1,50 @@
+module gpio_top (
+  input wire PCLK,
+  input wire PRESETn,
+  input wire [7:0] PADDR,
+  input wire PSEL,
+  input wire PENABLE,
+  input wire PWRITE,
+  input wire [31:0] PWDATA,
+  output wire [31:0] PRDATA,
+  output wire PREADY,
+  inout wire [31:0] xpins,
+  output wire irq
+);
+
+  wire [31:0] gpio_datain;
+  wire [31:0] gpio_dir;
+  wire [31:0] gpio_dataout;
+  wire [31:0] gpio_int_en;
+  wire [31:0] int_status;
+
+  assign int_status = 32'b0;
+  assign irq = |int_status;
+
+  gpio_ctrl u_gpio_ctrl (
+    .PCLK(PCLK),
+    .PRESETn(PRESETn),
+    .PADDR(PADDR),
+    .PSEL(PSEL),
+    .PENABLE(PENABLE),
+    .PWRITE(PWRITE),
+    .PWDATA(PWDATA),
+    .PRDATA(PRDATA),
+    .PREADY(PREADY),
+    .gpio_datain(gpio_datain),
+    .int_state_in(int_status),
+    .gpio_dir(gpio_dir),
+    .gpio_dataout(gpio_dataout),
+    .gpio_int_en(gpio_int_en)
+  );
+
+  gpio_prt_interface u_gpio_port (
+    .PCLK(PCLK),
+    .PRESETn(PRESETn),
+    .gpio_dir(gpio_dir),
+    .gpio_dataout(gpio_dataout),
+    .xpins(xpins),
+    .gpio_datain(gpio_datain)
+  );
+
+endmodule
